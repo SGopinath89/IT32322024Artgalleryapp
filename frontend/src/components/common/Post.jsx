@@ -22,27 +22,6 @@ const Post = ({ post }) => {
 
 	const formattedDate = formatPostDate(post.createdAt);
 
-	const { mutate: deletePost, isPending: isDeleting } = useMutation({
-		mutationFn: async () => {
-			try {
-				const res = await fetch(`/api/posts/${post._id}`, {
-					method: "DELETE",
-				});
-				const data = await res.json();
-
-				if (!res.ok) {
-					throw new Error(data.error || "Something went wrong");
-				}
-				return data;
-			} catch (error) {
-				throw new Error(error);
-			}
-		},
-		onSuccess: () => {
-			toast.success("Post deleted successfully");
-			queryClient.invalidateQueries({ queryKey: ["posts"] });
-		},
-	});
 
 	const { mutate: likePost, isPending: isLiking } = useMutation({
 		mutationFn: async () => {
@@ -60,10 +39,6 @@ const Post = ({ post }) => {
 			}
 		},
 		onSuccess: (updatedLikes) => {
-			// this is not the best UX, bc it will refetch all posts
-			// queryClient.invalidateQueries({ queryKey: ["posts"] });
-
-			// instead, update the cache directly for that post
 			queryClient.setQueryData(["posts"], (oldData) => {
 				return oldData.map((p) => {
 					if (p._id === post._id) {
@@ -78,35 +53,6 @@ const Post = ({ post }) => {
 		},
 	});
 
-	const { mutate: commentPost, isPending: isCommenting } = useMutation({
-		mutationFn: async () => {
-			try {
-				const res = await fetch(`/api/posts/comment/${post._id}`, {
-					method: "POST",
-					headers: {
-						"Content-Type": "application/json",
-					},
-					body: JSON.stringify({ text: comment }),
-				});
-				const data = await res.json();
-
-				if (!res.ok) {
-					throw new Error(data.error || "Something went wrong");
-				}
-				return data;
-			} catch (error) {
-				throw new Error(error);
-			}
-		},
-		onSuccess: () => {
-			toast.success("Comment posted successfully");
-			setComment("");
-			queryClient.invalidateQueries({ queryKey: ["posts"] });
-		},
-		onError: (error) => {
-			toast.error(error.message);
-		},
-	});
 
 	const handleDeletePost = () => {
 		deletePost();
